@@ -24,6 +24,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.example.lab4.ui.theme.Lab4Theme
 import androidx.core.content.edit
+import androidx.lifecycle.compose.dropUnlessResumed
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,9 +59,9 @@ fun Startup() {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    val firstName = remember {mutableStateOf(sharedPreferences.getString("FIRST_NAME", "")) }
-    val lastName = remember {mutableStateOf(sharedPreferences.getString("LAST_NAME", "")) }
-    val address = remember {mutableStateOf(sharedPreferences.getString("ADDRESS", "")) }
+    val firstName = remember {mutableStateOf("") }
+    val lastName = remember {mutableStateOf("") }
+    val address = remember {mutableStateOf("") }
 
     if (isShowingDialog.value) {
         AlertDialog(
@@ -74,6 +75,10 @@ fun Startup() {
                     onClick = {
                         isShowingDialog.value = false
                         agreeCollectData.value = true
+                        // retrieve preferences on confirmation
+                        firstName.value = sharedPreferences.getString("FIRST_NAME", "").toString()
+                        lastName.value = sharedPreferences.getString("LAST_NAME", "").toString()
+                        address.value = sharedPreferences.getString("ADDRESS", "").toString()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xff5cdb5c))
                 ) { Text("Accept") }
@@ -83,6 +88,12 @@ fun Startup() {
                     onClick = {
                         isShowingDialog.value = false
                         agreeCollectData.value = false
+                        // clear residual preferences on decline
+                        sharedPreferences.edit()
+                        {
+                            clear()
+                            apply()
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xffff0021))
                 ) { Text("Decline") }
@@ -91,52 +102,46 @@ fun Startup() {
     }
 
     Column {
-        firstName.value?.let {
-            TextField(
-                label = {Text("First Name")},
-                value = it,
-                onValueChange = {v -> run {
-                    firstName.value = v
-                    if (agreeCollectData.value) {
-                        sharedPreferences.edit()
-                        {
-                            putString("FIRST_NAME", v)
-                            apply()
-                        }
+        TextField(
+            label = {Text("First Name")},
+            value = firstName.value,
+            onValueChange = {v -> run {
+                firstName.value = v
+                if (agreeCollectData.value) {
+                    sharedPreferences.edit()
+                    {
+                        putString("FIRST_NAME", v)
+                        apply()
                     }
-                }},
-            )
-        }
-        lastName.value?.let {
-            TextField(
-                label = {Text("Last Name")},
-                value = it,
-                onValueChange = {v -> run {
-                    lastName.value = v
-                    if (agreeCollectData.value) {
-                        sharedPreferences.edit()
-                        {
-                            putString("LAST_NAME", v)
-                            apply()
-                        }
+                }
+            }},
+        )
+        TextField(
+            label = {Text("Last Name")},
+            value = lastName.value,
+            onValueChange = {v -> run {
+                lastName.value = v
+                if (agreeCollectData.value) {
+                    sharedPreferences.edit()
+                    {
+                        putString("LAST_NAME", v)
+                        apply()
                     }
-                }},
-            )
-        }
-        address.value?.let {
-            TextField(
-                label = {Text("Address")},
-                value = it,
-                onValueChange = {v -> run {
-                    address.value = v
-                    if (agreeCollectData.value) {
-                        sharedPreferences.edit()
-                        {
-                            putString("ADDRESS", v)
-                        }
+                }
+            }},
+        )
+        TextField(
+            label = {Text("Address")},
+            value = address.value,
+            onValueChange = {v -> run {
+                address.value = v
+                if (agreeCollectData.value) {
+                    sharedPreferences.edit()
+                    {
+                        putString("ADDRESS", v)
                     }
-                }},
-            )
-        }
+                }
+            }},
+        )
     }
 }
